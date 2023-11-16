@@ -1,24 +1,38 @@
 package main
 
 import (
-	"fmt"
+	"bytes"
 	"html/template"
 	"log"
-	"main/news"
+	"math"
 	"net/http"
 	"net/url"
+	"newsDemo/news/news"
 	"os"
+	"strconv"
 	"time"
-
-	"./news"
 
 	"github.com/joho/godotenv"
 )
 
 var tpl = template.Must(template.ParseFiles("index.html"))
 
+type Search struct {
+	Query      string
+	NextPage   int
+	TotalPages int
+	Results    *news.Results
+}
+
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	tpl.Execute(w, nil)
+	buf := &bytes.Buffer{}
+	err := tpl.Execute(buf, nil)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	buf.WriteTo(w)
 }
 
 func searchHandler(newsapi *news.Client) http.HandlerFunc {
@@ -35,8 +49,34 @@ func searchHandler(newsapi *news.Client) http.HandlerFunc {
 		if page == "" {
 			page = "1"
 		}
-		fmt.Println("Search Query is: ", seachQuery)
-		fmt.Println("Page is: ", page)
+
+		results, err := newsapi.FetchEveryting(seachQuery, page)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		nextPage, err := strconv.Atoi(page)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		search := &Search{
+			Query:      seachQuery,
+			NextPage:   nextPage,
+			TotalPages: int(math.Ceil(float64(results.TotalResults) / float64(newsapi.PageSize))),
+			Results:    results,
+		}
+
+		buf := &bytes.Buffer{}
+		err = tpl.Execute(buf, search)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		buf.WriteTo(w)
 	}
 }
 
