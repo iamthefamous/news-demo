@@ -43,9 +43,9 @@ func searchHandler(newsapi *news.Client) http.HandlerFunc {
 			return
 		}
 
-		parmas := u.Query()
-		seachQuery := parmas.Get("g")
-		page := parmas.Get("page")
+		paras := u.Query()
+		seachQuery := paras.Get("q")
+		page := paras.Get("page")
 		if page == "" {
 			page = "1"
 		}
@@ -95,6 +95,7 @@ func main() {
 	if apiKey == "" {
 		log.Fatal("Env: apiKey must be set")
 	}
+	// fmt.Println(apiKey)
 	myClient := &http.Client{Timeout: 10 * time.Second}
 	newsapi := news.NewClient(myClient, apiKey, 20)
 
