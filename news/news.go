@@ -25,7 +25,7 @@ type Article struct {
 
 type Results struct {
 	Status       string    `json:"status"`
-	TotalResults int       `json:"totalRetults"`
+	TotalResults int       `json:"totalResults"`
 	Articles     []Article `json:"articles"`
 }
 
@@ -33,6 +33,11 @@ type Client struct {
 	http     *http.Client
 	key      string
 	PageSize int
+}
+
+func (a *Article) FormatPublishedDate() string {
+	year, month, day := a.PublishedAt.Date()
+	return fmt.Sprintf("%v %d %d", month, day, year)
 }
 
 func (c *Client) FetchEveryting(qiery, page string) (*Results, error) {
